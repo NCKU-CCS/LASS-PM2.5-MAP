@@ -1,0 +1,300 @@
+<html>
+<head>
+  <title>A Leaflet map!</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet.js"></script>
+   <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyCO-pUGf5JuLoj0EIad1MJo5-9YfDyGQaI"></script>
+
+  <style>
+    #map{ height: 100% }
+  </style>
+</head>
+<body>
+
+
+
+
+
+<button onclick="panToYourPosition()">Your Location</button>
+
+
+<input type="text" name="name" id="addr" value="Taipei 101" />
+<button onclick="goToPosition()">Go!</button>
+
+
+
+
+
+  <div id="map"></div>
+
+
+<script src="https://d3js.org/d3-collection.v1.min.js"></script>
+<script src="https://d3js.org/d3-dispatch.v1.min.js"></script>
+<script src="https://d3js.org/d3-dsv.v1.min.js"></script>
+<script src="https://d3js.org/d3-request.v1.min.js"></script>
+
+
+
+<script
+ src="https://code.jquery.com/jquery-3.1.1.min.js"
+ integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+ crossorigin="anonymous">
+ </script>
+
+
+  
+
+  <script src="leaflet-idw.js"></script>
+
+
+  <script>
+
+  // get location of client
+var gpsPosition;
+function init(){
+  poisition = getLocation()
+}
+init();
+
+// marker of your location
+var marker;
+
+
+// get initial position
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(showPosition);
+        //position = navigator.geolocation.getCurrentPosition();
+    } else {
+        x.innerHTML = "Geolocation is not supported by this browser.";
+    }
+}
+
+function showPosition(position) {
+    // x.innerHTML = "Latitude: " + position.coords.latitude +
+    // "<br>Longitude: " + position.coords.longitude;
+    //gpsPosition = {lat:position.coords.latitude, lng:position.coords.longitude}
+    gpsPosition = [position.coords.latitude, position.coords.longitude]
+    gpsPositionG = gpsPosition
+}
+
+
+// go to queried position
+function goToPosition(){
+  map.removeLayer(marker)
+  var addrValue = document.getElementById("addr").value;
+
+  var geocoder = new google.maps.Geocoder();
+  var coor = [];
+
+  // geocode and set view
+  geocoder.geocode( { 'address': addrValue}, function(results, status) {
+    if (status == google.maps.GeocoderStatus.OK) {
+      var latitude = results[0].geometry.location.lat();
+      var longitude = results[0].geometry.location.lng();
+      // coor = [latitude, longitude];
+      coor.push(latitude);
+      coor.push(longitude);
+
+      gpsPosition = coor;
+      map.setView(gpsPosition, 13);
+      marker = L.marker(gpsPosition).addTo(map);
+    }
+  });
+}
+
+
+// pan to your location
+function panToYourPosition() {
+  map.setView(gpsPosition, 13);
+  marker = L.marker(gpsPosition).addTo(map);  
+}
+
+
+
+
+
+
+
+
+var data;
+var map;
+
+  // read csv file
+d3.csv("./LASS_sample.csv", function(error, d) {
+  if (error) throw error;
+  data = d;
+  //console.log(data); // [{"Hello": "world"}, …]
+
+
+
+  // initialize the map
+  map = L.map('map').setView([23.5, 120.7420], 8);
+
+  // load a tile layer
+
+L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/streets-v10/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoibmNrdXN0YXQiLCJhIjoiY2l2ZXVvNDRhMDBxajJ6bzZzOGwxdTU2eiJ9.A0Dp9WJrs4FPYhh_i327CA', {
+    attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+    maxZoom: 18
+}).addTo(map);
+
+/*
+var idw = L.idwLayer([
+    [50.5, 30.5, 0.2], // lat, lng, intensity
+    [50.6, 30.4, 0.5],
+    ...
+], {opacity: 0.3, cellSize: 10, exp: 2, max: 1200}).addTo(map);
+
+*/
+
+/*
+var points = data.map(function(d) {
+  //console.log(d.order);
+  return [d.gps_lat, d.gps_lon, d.s_d0];
+});
+map.options.maxZoom = 16;
+var idw = L.idwLayer(points, {opacity: 0.3, cellSize: 10, exp: 2, max: 100,  maxZoom: 10,
+            minZoom: 8, gradient : d.s_d0 
+          }).addTo(map);
+
+*/  
+
+
+
+   function getColor(d){
+             return     d < 11? "#9CFF9C":
+                        d < 23? "#31FF00":
+                        d < 35? "#31CF00":
+                        d < 41? "#FFFF00":
+                        d < 47? "#FFCF00":
+                        d < 53? "#FF9A00":
+                        d < 58? "#FF6464":
+                        d < 64? "#FF0000":
+                        d < 70? "#990000":
+                                "#CE30FF";
+    }
+
+
+
+ var legend = L.control({position: 'bottomright'});
+
+    legend.onAdd = function (map) {
+
+        var div = L.DomUtil.create('div', 'info legend'),
+        labels = [],
+        grades = [0,11,23,35,41,47,53,58,64,70];
+
+        // loop through our density intervals and generate a label with a colored square for each interval
+        for (var i = 0; i < grades.length; i++) {
+            div.innerHTML += labels.push(
+                '<i style="background:' + getColor(grades[i]+1) + ';">&nbsp;&nbsp;&nbsp;&nbsp;</i> ' +
+                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] : '+'));
+        }
+  div.innerHTML = labels.join('<br>');
+
+        return div;
+    };
+
+    legend.addTo(map);
+
+
+var circles = [];
+
+
+
+
+
+for (var i = 0; i < data.length; ++i) {
+ // console.log(data[i].SiteName);
+  if (0 <= data[i].s_d0 && data[i].s_d0 < 11){
+  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    color: '#9CFF9C',
+
+    fillOpacity: 0.5,
+    radius: 5000
+}).addTo(map);
+ 
+
+  }
+  else if (11 <= data[i].s_d0 && data[i].s_d0 < 21){
+  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    color: '#31FF00',
+
+    fillOpacity: 0.5,
+    radius: 5000
+}).addTo(map);
+  }
+  else if (21 <= data[i].s_d0 && data[i].s_d0 < 31){
+  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    color: '#31CF00',
+
+    fillOpacity: 0.5,
+    radius: 5000
+}).addTo(map);
+  }
+    else if (31 <= data[i].s_d0 && data[i].s_d0 < 41){
+  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    color: '#FFFF00',
+
+    fillOpacity: 0.5,
+    radius: 5000
+}).addTo(map);
+  }
+    else if (41 <= data[i].s_d0 && data[i].s_d0 < 51){
+  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    color: '#FFCF00',
+
+    fillOpacity: 0.5,
+    radius: 5000
+}).addTo(map);
+  }
+    else if (51 <= data[i].s_d0 && data[i].s_d0 < 61){
+  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    color: '#FF9A00',
+
+    fillOpacity: 0.5,
+    radius: 5000
+}).addTo(map);
+  }
+    else if (61 <= data[i].s_d0 && data[i].s_d0 < 71){
+  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    color: '#FF6464',
+
+    fillOpacity: 0.5,
+    radius: 5000
+}).addTo(map);
+  }
+  else{
+  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    color: '#FF0000',
+
+    fillOpacity: 0.5,
+    radius: 5000
+}).addTo(map);    
+  }
+
+
+
+  circle.bindPopup("SiteName : " + data[i].s_d0 +  "<br /> Date : " + data[i].timestamp + "<br /> PM 2.5 : " + data[i].s_d0);
+
+}
+
+
+
+//var circles = [];
+
+// for
+
+
+
+
+});
+
+
+
+
+
+
+  </script>
+</body>
+</html>
