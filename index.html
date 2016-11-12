@@ -1,6 +1,6 @@
 <html>
 <head>
-  <title>A Leaflet map!</title>
+  <title>LASS pm2.5 map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet.js"></script>
    <script type="text/javascript" src="http://maps.google.com/maps/api/js?key=AIzaSyCO-pUGf5JuLoj0EIad1MJo5-9YfDyGQaI"></script>
@@ -64,16 +64,12 @@ var marker;
 function getLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(showPosition);
-        //position = navigator.geolocation.getCurrentPosition();
     } else {
         x.innerHTML = "Geolocation is not supported by this browser.";
     }
 }
 
-function showPosition(position) {
-    // x.innerHTML = "Latitude: " + position.coords.latitude +
-    // "<br>Longitude: " + position.coords.longitude;
-    //gpsPosition = {lat:position.coords.latitude, lng:position.coords.longitude}
+function showPosition(position) {    
     gpsPosition = [position.coords.latitude, position.coords.longitude]
     gpsPositionG = gpsPosition
 }
@@ -81,7 +77,9 @@ function showPosition(position) {
 
 // go to queried position
 function goToPosition(){
-  map.removeLayer(marker)
+  if (typeof marker == 'object'){
+    map.removeLayer(marker)
+  }
   var addrValue = document.getElementById("addr").value;
 
   var geocoder = new google.maps.Geocoder();
@@ -96,9 +94,9 @@ function goToPosition(){
       coor.push(latitude);
       coor.push(longitude);
 
-      gpsPosition = coor;
-      map.setView(gpsPosition, 13);
-      marker = L.marker(gpsPosition).addTo(map);
+      queriedPosition = coor;
+      map.setView(queriedPosition, 13);
+      marker = L.marker(queriedPosition).addTo(map);
     }
   });
 }
@@ -106,6 +104,9 @@ function goToPosition(){
 
 // pan to your location
 function panToYourPosition() {
+  if (typeof marker == 'object'){
+    map.removeLayer(marker)
+  }
   map.setView(gpsPosition, 13);
   marker = L.marker(gpsPosition).addTo(map);  
 }
