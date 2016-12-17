@@ -1,37 +1,53 @@
 <html>
 <head>
   <title>LASS pm2.5 map</title>
+  <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+  <link rel="stylesheet" href="leaflet-routing-machine.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.1/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.0.1/dist/leaflet.js"></script>
-   <script type="text/javascript" src="https://maps.google.com/maps/api/js?key=AIzaSyCO-pUGf5JuLoj0EIad1MJo5-9YfDyGQaI"></script>
+  <script type="text/javascript" src="https://maps.google.com/maps/api/js?key=AIzaSyCO-pUGf5JuLoj0EIad1MJo5-9YfDyGQaI"></script>
+
+  <script src="leaflet-routing-machine.js"></script>
 
   <style>
-    #map{ height: 100% }
+    #map{ height: 80%; width:100%; display: }
+    #chart1{ display: inline-block;}
+    #chart2{ display: inline-block;}
+    #chart3{ display: inline-block;}
+    .axis--x path {
+      display: none;
+    }
+
+    .line {
+      fill: none;
+      stroke: steelblue;
+      stroke-width: 1.5px;
+    }
   </style>
+
 </head>
 <body>
 
-<p id="form"></p>
-<img src="img/loading.svg" style="width:100%;height:100%;" id="loading">
+  <div class="input_fields_wrap">
+    <div>location 1:<input type="text" name="mytext[]" id="addr1" value="Taipei 101" ><button  class="add_field_button">+</button><button class="go_button">Go</button></div>
+  </div>
 
-
-
-<div id="map"></div>
-
-
-
-<script src="https://d3js.org/d3-collection.v1.min.js"></script>
-<script src="https://d3js.org/d3-dispatch.v1.min.js"></script>
-<script src="https://d3js.org/d3-dsv.v1.min.js"></script>
-<script src="https://d3js.org/d3-request.v1.min.js"></script>
-
-
-
-<script
- src="https://code.jquery.com/jquery-3.1.1.min.js"
- integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
- crossorigin="anonymous">
- </script>
+  <img src="img/loading.svg" style="width:100%;height:100%;" id="loading">
+  <div id="map"></div>
+  <svg id="chart1" width="400" height="200"></svg>
+  <svg id="chart2" width="400" height="200"></svg>
+  <svg id="chart3" width="400" height="200"></svg>
+  
+  <script src="https://d3js.org/d3.v4.min.js"></script>
+  <script src="https://d3js.org/d3-collection.v1.min.js"></script>
+  <script src="https://d3js.org/d3-dispatch.v1.min.js"></script>
+  <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
+  <script src="https://d3js.org/d3-request.v1.min.js"></script>
+  <script
+   src="https://code.jquery.com/jquery-3.1.1.min.js"
+   integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+   crossorigin="anonymous">
+  </script>
 
 
   
@@ -40,6 +56,59 @@
 
   <script>
 
+function chartGenerate(coor,N){
+var svg = d3.select("#chart"+N),
+    margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = +svg.attr("width") - margin.left - margin.right,
+    height = +svg.attr("height") - margin.top - margin.bottom,
+    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var parseTime = d3.timeParse("%d-%b-%y");
+
+var x = d3.scaleTime()
+    .rangeRound([0, width]);
+
+var y = d3.scaleLinear()
+    .rangeRound([height, 0]);
+
+var line = d3.line()
+    .x(function(d) { return x(d.date); })
+    .y(function(d) { return y(d.close); });
+
+d3.tsv("data.tsv", function(d) {
+  d.date = parseTime(d.date);
+  d.close = +d.close;
+  return d;
+}, function(error, data) {
+  if (error) throw error;
+
+  x.domain(d3.extent(data, function(d) { return d.date; }));
+  y.domain(d3.extent(data, function(d) { return d.close; }));
+
+  g.append("g")
+      .attr("class", "axis axis--x")
+      .attr("transform", "translate(0," + height + ")")
+      .call(d3.axisBottom(x));
+
+  g.append("g")
+      .attr("class", "axis axis--y")
+      .call(d3.axisLeft(y))
+    .append("text")
+      .attr("fill", "#000")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", "0.71em")
+      .style("text-anchor", "end")
+      .text("pm2.5");
+
+  g.append("path")
+      .datum(data)
+      .attr("class", "line")
+      .attr("d", line);
+});
+
+}
 // getDistance
 function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
   // console.log("lat1:"+lat1);
@@ -159,40 +228,99 @@ function showPosition(position) {
 function loadingRemove(){
   var loading = document.getElementById("loading");
   loading.remove();  
-  showButton();  
+  // showButton();  
   initMap();  
   
 }
 
-var form = document.getElementById("form");
+$(document).ready(function() {
+    var max_fields      = 10; //maximum input boxes allowed
+    var wrapper         = $(".input_fields_wrap"); //Fields wrapper
+    var add_button      = $(".add_field_button"); //Add button ID
+    var go_button      = $(".go_button"); //Add button ID
+    
+    
+    var x = 1; //initlal text box count
+    $(add_button).click(function(e){ //on add input button click
+        e.preventDefault();
+        if(x < max_fields){ //max input box allowed
+            x++; //text box increment
+            $(wrapper).append('<div>location '+x+':<input type="text" id="addr'+x+'" name="mytext[]" value="Tainan Station"/><button class="remove_field">-</button></div>'); //add input box
+        }
+    });
+    
+    $(go_button).click(function(e){ //on add input button click
+        e.preventDefault();
+        goToPosition(x);
+    });
+
+    $(wrapper).on("click",".remove_field", function(e){ //user click on remove text
+        e.preventDefault(); $(this).parent('div').remove(); x--;
+    })
+});
+
 function showButton(){
   form.innerHTML = '<button onclick="panToYourPosition()">Your Location</button><input type="text" name="name" id="addr" value="Taipei 101" /><button onclick="goToPosition()">Go!</button>'
 }
 
-// go to queried position
-function goToPosition(){
-  if (typeof marker == 'object'){
-    map.removeLayer(marker)
-  }
-  var addrValue = document.getElementById("addr").value;
-
+var queriedLat = [];
+var queriedLon = [];
+var queriedPosition=[]
+function addPoint(addrValue,x){
   var geocoder = new google.maps.Geocoder();
   var coor = [];
-
-  // geocode and set view
   geocoder.geocode( { 'address': addrValue}, function(results, status) {
     if (status == google.maps.GeocoderStatus.OK) {
       var latitude = results[0].geometry.location.lat();
       var longitude = results[0].geometry.location.lng();
-      // coor = [latitude, longitude];
       coor.push(latitude);
       coor.push(longitude);
+      marker = L.marker(coor).addTo(map);
+      queriedLat.push(latitude);
+      queriedLon.push(longitude);
+      queriedPosition.push(coor);
+      LatMax=getMaxOfArray(queriedLat)
+      LatMin=getMinOfArray(queriedLat)
+      LonMax=getMaxOfArray(queriedLon)
+      LonMin=getMinOfArray(queriedLon)
+      chartGenerate(coor,queriedPosition.length);
+      if(queriedPosition.length==x){
+        map.fitBounds([
+        [LatMin,LonMin],
+        [LatMax,LonMax]
+        ]);
+        L.Routing.control({
+          waypoints: queriedPosition
+        ,
+        routeWhileDragging: true
+        }).addTo(map);
+      }
 
-      queriedPosition = coor;
-      map.setView(queriedPosition, 13);
-      marker = L.marker(queriedPosition).addTo(map);
     }
   });
+}
+
+function getMaxOfArray(numArray) {
+  return Math.max.apply(Math, numArray);
+}
+function getMinOfArray(numArray) {
+  return Math.min.apply(Math, numArray);
+}
+
+
+// go to queried position
+function goToPosition(x){
+  if (typeof marker == 'object'){
+    map.removeLayer(marker)
+  }
+  var addrValue='';
+  var count=0;
+  for (i = 1; i < (x+1); i++) { 
+    addrValue = document.getElementById("addr"+i).value;
+    if (addrValue){
+      addPoint(addrValue,x);
+    }
+  } 
 }
 
 function getAirQualityPic(airValue){
@@ -393,7 +521,7 @@ for (var i = 0; i < data.length; ++i) {
     radius: 500
 }).addTo(map);
 
-  addressPoints1.push([data[i].lat, data[i].lon, 0.3])
+  addressPoints1.push([data[i].lat, data[i].lon, 0])
  
 
   }
@@ -405,7 +533,7 @@ for (var i = 0; i < data.length; ++i) {
     radius: 500
 }).addTo(map);
 
-  addressPoints1.push([data[i].lat, data[i].lon, 0.4])
+  addressPoints1.push([data[i].lat, data[i].lon, 10])
 
   }
   else if (21 <= data[i].pollution && data[i].pollution < 31){
@@ -415,6 +543,7 @@ for (var i = 0; i < data.length; ++i) {
     fillOpacity: 0.5,
     radius: 500
 }).addTo(map);
+  addressPoints1.push([data[i].lat, data[i].lon, 20])
   }
     else if (31 <= data[i].pollution && data[i].pollution < 41){
   var circle = L.circle([data[i].lat, data[i].lon], {
@@ -423,7 +552,7 @@ for (var i = 0; i < data.length; ++i) {
     fillOpacity: 0.5,
     radius: 500
 }).addTo(map);
-  addressPoints1.push([data[i].lat, data[i].lon, 0.5])
+  addressPoints1.push([data[i].lat, data[i].lon, 30])
   }
     else if (41 <= data[i].pollution && data[i].pollution < 51){
   var circle = L.circle([data[i].lat, data[i].lon], {
@@ -432,7 +561,7 @@ for (var i = 0; i < data.length; ++i) {
     fillOpacity: 0.5,
     radius: 500
 }).addTo(map);
-  addressPoints1.push([data[i].lat, data[i].lon, 0.6])
+  addressPoints1.push([data[i].lat, data[i].lon, 40])
   }
     else if (51 <= data[i].pollution && data[i].pollution < 61){
   var circle = L.circle([data[i].lat, data[i].lon], {
@@ -441,7 +570,7 @@ for (var i = 0; i < data.length; ++i) {
     fillOpacity: 0.5,
     radius: 500
 }).addTo(map);
-  addressPoints1.push([data[i].lat, data[i].lon, 0.7])
+  addressPoints1.push([data[i].lat, data[i].lon, 50])
   }
     else if (61 <= data[i].pollution && data[i].pollution < 71){
   var circle = L.circle([data[i].lat, data[i].lon], {
@@ -450,7 +579,7 @@ for (var i = 0; i < data.length; ++i) {
     fillOpacity: 0.5,
     radius: 500
 }).addTo(map);
-  addressPoints1.push([data[i].lat, data[i].lon, 0.8])
+  addressPoints1.push([data[i].lat, data[i].lon, 60])
   }
   else{
   var circle = L.circle([data[i].lat, data[i].lon], {
@@ -459,7 +588,7 @@ for (var i = 0; i < data.length; ++i) {
     fillOpacity: 0.5,
     radius: 500
 }).addTo(map); 
-  addressPoints1.push([data[i].lat, data[i].lon, 0.9])   
+  addressPoints1.push([data[i].lat, data[i].lon, 70])   
   }
 
 
@@ -468,11 +597,11 @@ for (var i = 0; i < data.length; ++i) {
 }
 
 var idw = L.idwLayer(addressPoints1,{
-            opacity: 0.3,
+            opacity: 0.5,
             maxZoom: 18,
             cellSize: 10,
             exp: 3,
-            max: 1
+            max: 100
         }).addTo(map);
 
 
