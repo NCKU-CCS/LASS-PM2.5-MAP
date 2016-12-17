@@ -14,6 +14,8 @@
 <p id="form"></p>
 <img src="img/loading.svg" style="width:100%;height:100%;" id="loading">
 
+
+
 <div id="map"></div>
 
 
@@ -37,10 +39,93 @@
 
   <script>
 
-  // get location of client
+// getDistance
+function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
+  // console.log("lat1:"+lat1);
+  // console.log("lon1:"+lon1);
+  // console.log("lat2:"+lat2);
+  // console.log("lon2:"+lon2);
+
+  var R = 6371; // Radius of the earth in km
+  var dLat = deg2rad(lat2-lat1);  // deg2rad below
+  var dLon = deg2rad(lon2-lon1);
+  var a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+    ; 
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+  var d = R * c; // Distance in km
+  // console.log("distance:" + d)
+  return d;
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI/180)
+}
+
+function readTextFile(file){
+    var rawFile = new XMLHttpRequest();
+    var allText;
+    rawFile.open("GET", file, false);
+    rawFile.onreadystatechange = function ()
+    {
+        if(rawFile.readyState === 4)
+        {
+            if(rawFile.status === 200 || rawFile.status == 0)
+            {
+                allText = rawFile.responseText;
+                // alert(allText);
+            }
+        }
+    }
+    rawFile.send(null);
+    return allText;
+}
+
+var Sites = []
+function getBoxData(){
+    var data = readTextFile("airbox.csv");
+    var lines = data.split("\n")
+
+    for(var i=1;i<lines.length-1;i++){
+        var line_split_data = lines[i].split(',');
+        var deviceDict = {"device_id":line_split_data[0], "PM2.5":parseFloat(line_split_data[1]), "timestamp":line_split_data[2], "lat":parseFloat(line_split_data[3]), "lng":parseFloat(line_split_data[4])}
+        Sites.push(deviceDict);
+    }
+    console.log("get Data done.")
+}
+
+// get nearest site
+function getNearestSite(loadingRemove){
+    console.log("start")
+    start = new Date().getTime();
+    var nearestSite;
+    var smallestDistance = 100000;
+    var count = 0
+    for(var siteIndex = 0; siteIndex < Sites.length; siteIndex++){      
+        count += 1
+        distance = getDistanceFromLatLonInKm(gpsPosition[0], gpsPosition[1], Sites[siteIndex].lat, Sites[siteIndex].lng)
+        if(smallestDistance >= distance){
+          smallestDistance = distance;
+          nearestSite = Sites[siteIndex];
+        }
+    }
+    end = new Date().getTime();
+
+    console.log("sec:" + (end-start) + " (ms)")
+    console.log("count:" + count)
+    loadingRemove();
+
+    return nearestSite;
+}
+
+// get location of client
 var gpsPosition;
 function init(){
-  poisition = getLocation()
+  getBoxData();
+  poisition = getLocation();
+  
 }
 init();
 
@@ -57,17 +142,25 @@ function getLocation() {
     }
 }
 
-function showPosition(position) {    
+var nearestSite;
+var start;
+var end;
+function showPosition(position) {
     gpsPosition = [position.coords.latitude, position.coords.longitude]
-    gpsPositionG = gpsPosition;
-    loadingRemove();
-    showButton();
+    // gpsPositionG = gpsPosition;
+    
+    nearestSite = getNearestSite(loadingRemove);
+    // end = new Date().getTime();
+    // console.log("sec:" + (end-start) + " (ms)")
+    // loadingRemove();   
 }
 
 function loadingRemove(){
   var loading = document.getElementById("loading");
-  loading.remove();
-  initMap();
+  loading.remove();  
+  showButton();  
+  initMap();  
+  
 }
 
 var form = document.getElementById("form");
@@ -101,6 +194,57 @@ function goToPosition(){
   });
 }
 
+function getAirQualityPic(airValue){
+    var airPicUrl;
+    console.log("airValue:" + airValue)
+  
+    if(airValue >= 45){
+        if(airValue >= 59){
+            if(airValue >= 65){
+                if(airValue >= 71){
+                    airPicUrl = "https://www.taiwanstat.com/realtime/pm2.5/img/PM2.5-10.png";
+                }
+                else{
+                    airPicUrl = "https://www.taiwanstat.com/realtime/pm2.5/img/PM2.5-9.png"; 
+                }
+            }
+            else{
+                airPicUrl = "https://www.taiwanstat.com/realtime/pm2.5/img/PM2.5-8.png";
+            }
+        }
+        else if(airValue > 50){
+            airPicUrl = "https://www.taiwanstat.com/realtime/pm2.5/img/PM2.5-7.png";  
+        }
+        else{
+            airPicUrl = "https://www.taiwanstat.com/realtime/pm2.5/img/PM2.5-6.png";   
+        }        
+    }
+    else{
+        if(airValue >= 24){
+            if(airValue >= 36){
+                if(airValue >= 42){
+                    airPicUrl = "https://www.taiwanstat.com/realtime/pm2.5/img/PM2.5-5.png";
+                }
+                else{
+                    airPicUrl = "https://www.taiwanstat.com/realtime/pm2.5/img/PM2.5-4.png";
+                }
+            }
+            else{
+                airPicUrl = "https://www.taiwanstat.com/realtime/pm2.5/img/PM2.5-3.png";
+            }
+        }
+        else if(airValue >= 12){
+            airPicUrl = "https://www.taiwanstat.com/realtime/pm2.5/img/PM2.5-2.png";
+        }
+        else{
+            airPicUrl = "https://www.taiwanstat.com/realtime/pm2.5/img/PM2.5-1.png";
+        }
+    }
+  return airPicUrl;
+}
+
+var airVlaue;
+var airQualityPicUrl;
 
 // pan to your location
 function panToYourPosition() {
@@ -108,7 +252,25 @@ function panToYourPosition() {
     map.removeLayer(marker)
   }
   map.setView(gpsPosition, 13);
-  marker = L.marker(gpsPosition).addTo(map);  
+
+  
+  
+  deviceId = nearestSite["device_id"]
+  pm25Value = nearestSite["PM2.5"]
+  timestamp = nearestSite["timestamp"]
+
+  airQualityPicUrl = getAirQualityPic(pm25Value)
+  // create popup contents
+  var customPopup = "<p style='font-size:20px'>Air Quality<br/>DeviceID:" + deviceId + "<br/>PM2.5:" + pm25Value + "<br/>Timestamp:" + timestamp + "<br/>Status:<br/><img src=" + airQualityPicUrl + " width=150px></p>";
+  
+  
+  // specify popup options 
+  var customOptions =
+      {
+      'maxWidth': '1000',
+      'className' : 'custom'
+      }
+  marker = L.marker(gpsPosition).addTo(map).bindPopup(customPopup, customOptions).openPopup();
 }
 
 
@@ -123,17 +285,19 @@ var map;
 
 function initMap(){
 
-
   // read csv file
 d3.csv("./LASS_sample.csv", function(error, d) {
   if (error) throw error;
   data = d;
-  //console.log(data); // [{"Hello": "world"}, …]
-
-
-
+  
   // initialize the map
   map = L.map('map').setView([23.5, 120.7420], 8);
+  panToYourPosition();
+  var idw = L.idwLayer([
+    [23.5, 120.7420, 0.2]//, // lat, lng, intensity
+    // [50.6, 30.4, 0.5],
+  //  ...
+  ], {opacity: 0.3, cellSize: 10, exp: 2, max: 1200}).addTo(map);
 
   // load a tile layer
 
