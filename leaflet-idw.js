@@ -26,18 +26,17 @@
         defaultCellSize: 25,
 
         defaultGradient: {
-              0.00: "#ffffff",
-              11: "#9CFF9C",
-              23: "#31FF00",
-              35: "#31CF00",
-              41: "#FFFF00",
-              47: "#FFCF00",
-              53: "#FF9A00",
-              58: "#FF6464",
-              64: "#FF0000",
-              70: "#990000",
-              71: "#CE30FF",
-              100: "#CE30FF"
+            0.0: '#000066',
+            0.1: 'blue',
+            0.2: 'cyan',
+            0.3: 'lime',
+            0.4: 'yellow',            
+            0.5: 'orange',
+            0.6: 'red',
+            0.7: 'Maroon',
+            0.8: '#660066',
+            0.9: '#990099',
+            1.0: '#ff66ff'
         },
 
         data: function (data) {

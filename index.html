@@ -36,6 +36,7 @@
 
   
   <script src="leaflet-idw.js"></script>
+  <script src="exampledata1.js"></script>
 
   <script>
 
@@ -282,22 +283,31 @@ function panToYourPosition() {
 
 var data;
 var map;
-
+var addressPoints1 = [];
 function initMap(){
 
   // read csv file
-d3.csv("./LASS_sample.csv", function(error, d) {
+d3.csv("./airbox.csv", function(error, d) {
   if (error) throw error;
   data = d;
   
   // initialize the map
   map = L.map('map').setView([23.5, 120.7420], 8);
   panToYourPosition();
-  var idw = L.idwLayer([
-    [23.5, 120.7420, 0.2]//, // lat, lng, intensity
-    // [50.6, 30.4, 0.5],
-  //  ...
-  ], {opacity: 0.3, cellSize: 10, exp: 2, max: 1200}).addTo(map);
+
+  // var idw = L.idwLayer(addressPoints,{
+  //           opacity: 0.3,
+  //           maxZoom: 18,
+  //           cellSize: 10,
+  //           exp: 3,
+  //           max: 1200
+  //       }).addTo(map);
+
+  // var idw = L.idwLayer([
+  //   [23.5, 120.7420, 0.1], // lat, lng, intensity
+  //   [25.048147, 121.517069, 1000]//, // lat, lng, intensity
+  // //  ...
+  // ], {opacity: 0.3, cellSize: 10, exp: 2, max: 1200}).addTo(map);
 
   // load a tile layer
 
@@ -375,79 +385,95 @@ var circles = [];
 
 for (var i = 0; i < data.length; ++i) {
  // console.log(data[i].SiteName);
-  if (0 <= data[i].s_d0 && data[i].s_d0 < 11){
-  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+  if (0 <= data[i].pollution && data[i].pollution < 11){
+  var circle = L.circle([data[i].lat, data[i].lon], {
     color: '#9CFF9C',
 
     fillOpacity: 0.5,
-    radius: 5000
+    radius: 500
 }).addTo(map);
+
+  addressPoints1.push([data[i].lat, data[i].lon, 0.3])
  
 
   }
-  else if (11 <= data[i].s_d0 && data[i].s_d0 < 21){
-  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+  else if (11 <= data[i].pollution && data[i].pollution < 21){
+  var circle = L.circle([data[i].lat, data[i].lon], {
     color: '#31FF00',
 
     fillOpacity: 0.5,
-    radius: 5000
+    radius: 500
 }).addTo(map);
+
+  addressPoints1.push([data[i].lat, data[i].lon, 0.4])
+
   }
-  else if (21 <= data[i].s_d0 && data[i].s_d0 < 31){
-  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+  else if (21 <= data[i].pollution && data[i].pollution < 31){
+  var circle = L.circle([data[i].lat, data[i].lon], {
     color: '#31CF00',
 
     fillOpacity: 0.5,
-    radius: 5000
+    radius: 500
 }).addTo(map);
   }
-    else if (31 <= data[i].s_d0 && data[i].s_d0 < 41){
-  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    else if (31 <= data[i].pollution && data[i].pollution < 41){
+  var circle = L.circle([data[i].lat, data[i].lon], {
     color: '#FFFF00',
 
     fillOpacity: 0.5,
-    radius: 5000
+    radius: 500
 }).addTo(map);
+  addressPoints1.push([data[i].lat, data[i].lon, 0.5])
   }
-    else if (41 <= data[i].s_d0 && data[i].s_d0 < 51){
-  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    else if (41 <= data[i].pollution && data[i].pollution < 51){
+  var circle = L.circle([data[i].lat, data[i].lon], {
     color: '#FFCF00',
 
     fillOpacity: 0.5,
-    radius: 5000
+    radius: 500
 }).addTo(map);
+  addressPoints1.push([data[i].lat, data[i].lon, 0.6])
   }
-    else if (51 <= data[i].s_d0 && data[i].s_d0 < 61){
-  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    else if (51 <= data[i].pollution && data[i].pollution < 61){
+  var circle = L.circle([data[i].lat, data[i].lon], {
     color: '#FF9A00',
 
     fillOpacity: 0.5,
-    radius: 5000
+    radius: 500
 }).addTo(map);
+  addressPoints1.push([data[i].lat, data[i].lon, 0.7])
   }
-    else if (61 <= data[i].s_d0 && data[i].s_d0 < 71){
-  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+    else if (61 <= data[i].pollution && data[i].pollution < 71){
+  var circle = L.circle([data[i].lat, data[i].lon], {
     color: '#FF6464',
 
     fillOpacity: 0.5,
-    radius: 5000
+    radius: 500
 }).addTo(map);
+  addressPoints1.push([data[i].lat, data[i].lon, 0.8])
   }
   else{
-  var circle = L.circle([data[i].gps_lat, data[i].gps_lon], {
+  var circle = L.circle([data[i].lat, data[i].lon], {
     color: '#FF0000',
 
     fillOpacity: 0.5,
-    radius: 5000
-}).addTo(map);    
+    radius: 500
+}).addTo(map); 
+  addressPoints1.push([data[i].lat, data[i].lon, 0.9])   
   }
 
 
 
-  circle.bindPopup("SiteName : " + data[i].s_d0 +  "<br /> Date : " + data[i].timestamp + "<br /> PM 2.5 : " + data[i].s_d0);
-
+  circle.bindPopup("SiteName : " + data[i].device_id +  "<br /> Date : " + data[i].timestamp + "<br /> PM 2.5 : " + data[i].pollution);
 }
 
+var idw = L.idwLayer(addressPoints1,{
+            opacity: 0.3,
+            maxZoom: 18,
+            cellSize: 10,
+            exp: 3,
+            max: 1
+        }).addTo(map);
 
 
 //var circles = [];
